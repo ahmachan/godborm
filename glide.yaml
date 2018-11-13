@@ -1,0 +1,5 @@
+package: gomysql
+import:
+- package: github.com/go-sql-driver/mysql
+- package: github.com/widuu/goini
+- package: github.com/widuu/gomysql
