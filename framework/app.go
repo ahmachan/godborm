@@ -6,11 +6,16 @@ import (
 	"fmt"
 	"godborm/app/services/user_service"
 	"godborm/framework/db"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-chi/chi"
 )
+
+var dbHandler *db.DbHandle
 
 /**
  * 启动入口
@@ -20,6 +25,30 @@ func Start() {
 	//router := new(framework.router)
 	//router.dispatch();
 	//log.flushLog();
+	r := chi.NewRouter()
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("hello world"))
+	})
+
+	r.Get("/test", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Write([]byte("test\n"))
+		//writer.Write([]byte("hello world\n"))
+		//a := request.Context().Value("user")
+
+		ugService := new(user_service.UserGoodsListService)
+		ugService.Dbh = dbHandler
+		mapRes := ugService.GetUserGoodsListServiceVm()
+		jsonStr, err := json.Marshal(mapRes)
+		if err != nil {
+			fmt.Println("MapToJsonDemo err: ", err)
+			writer.Write([]byte("MapToJsonDemo err"))
+		}
+		fmt.Println(string(jsonStr))
+
+		writer.Write(jsonStr)
+	})
+
+	http.ListenAndServe(":3000", r)
 }
 
 func getConfigFile() string {
@@ -52,18 +81,11 @@ func initEnv() {
 	if pathErr != nil {
 		fmt.Println(pathErr)
 	}
+
 	lastConfigFile := currPath + getConfigFile()
 	dbh, err := db.SetConfig(lastConfigFile)
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	ugService := new(user_service.UserGoodsListService)
-	ugService.Dbh = dbh
-	mapRes := ugService.GetUserGoodsListServiceVm()
-	jsonStr, err := json.Marshal(mapRes)
-	if err != nil {
-		fmt.Println("MapToJsonDemo err: ", err)
-	}
-	fmt.Println(string(jsonStr))
+	dbHandler = dbh
 }
